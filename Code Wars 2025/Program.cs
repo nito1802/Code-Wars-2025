@@ -54,43 +54,46 @@ internal class Program
         return results;
     }
 
-    private static void Main(string[] args)
+    private static async Task<SyntaxNode> GetSyntaxNodeMy(string filePath)
     {
-        //var files = Directory.GetFiles("C:\\Users\\Jarek\\Desktop\\Istotne\\source\\Visual Studio\\Main\\SmartHome_BE", "*.cs", SearchOption.AllDirectories);
+        var code = File.ReadAllText(filePath);
+        var tree = CSharpSyntaxTree.ParseText(code);
+        var root = await tree.GetRootAsync();
+        return root;
+    }
 
-        var filesgg = Directory.GetFiles(@"C:\Users\Jarek\Desktop\Istotne\source\Visual Studio\Main\SmartHome_BE", "*.cs", SearchOption.AllDirectories).Where(ContainsRequest).ToList();
+    private static async Task<List<string>> GetSyntaxNode(List<string> methodsWithRequests, SyntaxNode root, string filePath)
+    {
+        List<string> results = new List<string>();
 
-        foreach (var item in filesgg)
+        // Znajdź metodę CompleteTaskAsync
+        var methods = root.DescendantNodes()
+            .OfType<MethodDeclarationSyntax>()
+            .Where(m => methodsWithRequests.Contains(m.Identifier.Text))
+            .ToList();
+
+        if (methods == null)
         {
-            var methodsMy = LookinToMethodsStart(item);
+            Console.WriteLine("Metoda nie znaleziona.");
+            return null;
         }
 
-        var myText = "$\"https://polska.com/open/v1/project/fss\"\"?isAllDay=true&isCompleted=true\"\"ss\"";
-
-        string exText = "myExampleBranch";
-
-        var isCont = exText.Contains("branch");
-
-        List<string> files = [@"C:\Users\Jarek\Desktop\Istotne\source\Visual Studio\Test\Code Wars 2025\Code Wars 2025\FilesToAnalysis\ExampleFileToAnalyse.cs"];
-
-        var syntaxTrees = files.Select(file => CSharpSyntaxTree.ParseText(File.ReadAllText(file))).ToList();
-
-        var references = new List<MetadataReference>
+        foreach (var method in methods)
         {
-            MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
-            MetadataReference.CreateFromFile(typeof(Enumerable).Assembly.Location),
-            MetadataReference.CreateFromFile(Assembly.Load("System.Runtime").Location)
-        };
-
-        var compilation = CSharpCompilation.Create("Analysis", syntaxTrees, references);
-        foreach (var tree in syntaxTrees)
-        {
-            var semanticModel = compilation.GetSemanticModel(tree);
-            var root = tree.GetRoot();
-
+            // Słownik zmiennych lokalnych i ich wartości
             var variableAssignments = new Dictionary<string, string>();
 
-            var variableDeclaratorSyntaxes = root.DescendantNodes().OfType<VariableDeclaratorSyntax>().ToList();
+            // Szukaj tylko wewnątrz ciała metody
+            var bodyNodes = method.Body?.DescendantNodes().ToList();
+            if (bodyNodes == null)
+            {
+                Console.WriteLine("Brak ciała metody.");
+                return null;
+            }
+
+            // Deklaracje zmiennych
+            var variableDeclaratorSyntaxes = bodyNodes
+                .OfType<VariableDeclaratorSyntax>();
 
             foreach (var declarator in variableDeclaratorSyntaxes)
             {
@@ -153,25 +156,84 @@ internal class Program
                         argumentStr = valueMy;
                     }
                 }
-                else if (argument?.Expression is InvocationExpressionSyntax methodCall)
-                {
-                    var symbol = semanticModel.GetSymbolInfo(methodCall).Symbol as IMethodSymbol;
-                    if (symbol != null && symbol.DeclaringSyntaxReferences.Length > 0)
-                    {
-                        var methodDecl = symbol.DeclaringSyntaxReferences[0].GetSyntax() as MethodDeclarationSyntax;
-                        var returnStmt = methodDecl?.Body?.Statements.OfType<ReturnStatementSyntax>().FirstOrDefault();
-                        if (returnStmt?.Expression != null)
-                        {
-                            argumentStr = returnStmt.Expression.ToString();
-                        }
-                    }
-                }
-                string text = $"[{methodName.Replace("Async", "").ToUpper()}] {argumentStr} in {Path.GetFileName(tree.FilePath)}";
+                //else if (argument?.Expression is InvocationExpressionSyntax methodCall)
+                //{
+                //    var symbol = semanticModel.GetSymbolInfo(methodCall).Symbol as IMethodSymbol;
+                //    if (symbol != null && symbol.DeclaringSyntaxReferences.Length > 0)
+                //    {
+                //        var methodDecl = symbol.DeclaringSyntaxReferences[0].GetSyntax() as MethodDeclarationSyntax;
+                //        var returnStmt = methodDecl?.Body?.Statements.OfType<ReturnStatementSyntax>().FirstOrDefault();
+                //        if (returnStmt?.Expression != null)
+                //        {
+                //            argumentStr = returnStmt.Expression.ToString();
+                //        }
+                //    }
+                //}
+
+                //var directoryMy = Path.GetDirectoryName(filePath);
+                //string text = $"[{methodName.Replace("Async", "").ToUpper()}] {argumentStr} in {Path.GetFileName(filePath)}";
+                string text = $"[{methodName.Replace("Async", "").ToUpper()}] {argumentStr} in {filePath}";
+
+                results.Add(text);
+
                 if (!string.IsNullOrEmpty(text))
                 {
                 }
                 Console.WriteLine(text);
             }
         }
+        return results;
+    }
+
+    private static async Task Main(string[] args)
+    {
+        //var files = Directory.GetFiles("C:\\Users\\Jarek\\Desktop\\Istotne\\source\\Visual Studio\\Main\\SmartHome_BE", "*.cs", SearchOption.AllDirectories);
+
+        var myDir = @"C:\Users\Jarek\Desktop\Istotne\source\Visual Studio\Main";
+
+        var directories = Directory.GetDirectories(myDir);
+
+        List<List<string>> myFF = [];
+
+        foreach (var dir in directories)
+        {
+            var filesgg = Directory.GetFiles(dir, "*.cs", SearchOption.AllDirectories).Where(ContainsRequest).ToList();
+
+            foreach (var item in filesgg)
+            {
+                var methodsMy = LookinToMethodsStart(item);
+
+                var syntaxNode = await GetSyntaxNodeMy(item);
+
+                var myTt = await GetSyntaxNode(methodsMy, syntaxNode, item);
+                if (myTt?.Count > 0)
+                {
+                    myFF.Add(myTt);
+                }
+            }
+        }
+
+        var myText = "$\"https://polska.com/open/v1/project/fss\"\"?isAllDay=true&isCompleted=true\"\"ss\"";
+
+        string exText = "myExampleBranch";
+
+        var isCont = exText.Contains("branch");
+
+        List<string> files = [@"C:\Users\Jarek\Desktop\Istotne\source\Visual Studio\Test\Code Wars 2025\Code Wars 2025\FilesToAnalysis\ExampleFileToAnalyse.cs"];
+
+        var syntaxTrees = files.Select(file => CSharpSyntaxTree.ParseText(File.ReadAllText(file))).ToList();
+
+        var references = new List<MetadataReference>
+        {
+            MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
+            MetadataReference.CreateFromFile(typeof(Enumerable).Assembly.Location),
+            MetadataReference.CreateFromFile(Assembly.Load("System.Runtime").Location)
+        };
+
+        var compilation = CSharpCompilation.Create("Analysis", syntaxTrees, references);
+
+        //var code = File.ReadAllText(filePath);
+        //var tree = CSharpSyntaxTree.ParseText(code);
+        //var root = await tree.GetRootAsync();
     }
 }
