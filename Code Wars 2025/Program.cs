@@ -2,6 +2,32 @@
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
+public class EndpointCall
+{
+    /// <summary>
+    /// Treść endpointa, np. "https://api.example.com/open/v1/task"
+    /// </summary>
+    public string Url { get; set; }
+
+    /// <summary>
+    /// Get, Post, Put, Delete
+    /// </summary>
+    public string Type { get; set; }
+
+    /// <summary>
+    /// W jakiej metodzie jest wywołanie, np. "GetRpipeAsync"
+    /// </summary>
+    public string MethodName { get; set; }
+
+    /// <summary>
+    /// Jaki projekt, np Documents.be
+    /// </summary>
+    public string Project { get; set; }
+
+    public string FileName { get; set; }
+    public string FullPath { get; set; }
+}
+
 internal class Program
 {
     private static async Task Main(string[] args)
@@ -15,7 +41,7 @@ internal class Program
 
         foreach (var item in endpoints)
         {
-            Console.WriteLine(item);
+            Console.WriteLine(item.Url);
         }
     }
 
@@ -68,9 +94,9 @@ internal class Program
         return root;
     }
 
-    private static async Task<List<string>> GetEndpointInvokationsFromFile(List<string> methodsWithRequests, SyntaxNode root, string filePath)
+    private static async Task<List<EndpointCall>> GetEndpointInvokationsFromFile(List<string> methodsWithRequests, SyntaxNode root, string filePath)
     {
-        List<string> results = new List<string>();
+        List<EndpointCall> results = new List<EndpointCall>();
 
         // Znajdź metodę CompleteTaskAsync
         var methods = root.DescendantNodes()
@@ -165,7 +191,15 @@ internal class Program
 
                 string text = $"[{methodName.Replace("Async", "").ToUpper()}] {argumentStr} in {filePath}";
 
-                results.Add(text);
+                results.Add(new()
+                {
+                    Url = argumentStr,
+                    Type = methodName.Replace("Async", "").ToUpper(),
+                    MethodName = method.Identifier.Text,
+                    Project = "Documents.be",
+                    FileName = Path.GetFileNameWithoutExtension(filePath),
+                    FullPath = filePath
+                });
             }
         }
         return results;
