@@ -1,6 +1,11 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 
 internal class Program
 {
@@ -22,12 +27,9 @@ internal class Program
     private static List<string> LookinToMethodsStart(string filePath)
     {
         var sourceCode = File.ReadAllText(filePath);
-
-        // 1. Parsujemy kod źródłowy do SyntaxTree
         var tree = CSharpSyntaxTree.ParseText(sourceCode);
         var root = tree.GetRoot();
 
-        // 2. Wyszukujemy wywołania GetAsync/PostAsync
         var invocations = root
             .DescendantNodes()
             .OfType<InvocationExpressionSyntax>()
@@ -43,7 +45,6 @@ internal class Program
 
         List<string> results = [];
 
-        // 3. Dla każdego wywołania znajdujemy deklarację metody
         foreach (var inv in invocations)
         {
             var methodDecl = inv
@@ -72,32 +73,24 @@ internal class Program
     {
         List<string> results = new List<string>();
 
-        // Znajdź metodę CompleteTaskAsync
+        var staticStringMethods = ExtractStaticStringReturningMethods(root);
+
         var methods = root.DescendantNodes()
             .OfType<MethodDeclarationSyntax>()
             .Where(m => methodsWithRequests.Contains(m.Identifier.Text))
             .ToList();
 
-        if (methods == null)
-        {
-            Console.WriteLine("Metoda nie znaleziona.");
-            return null;
-        }
-
         foreach (var method in methods)
         {
-            // Słownik zmiennych lokalnych i ich wartości
             var variableAssignments = new Dictionary<string, string>();
 
-            // Szukaj tylko wewnątrz ciała metody
             var bodyNodes = method.Body?.DescendantNodes().ToList();
             if (bodyNodes == null)
             {
                 Console.WriteLine("Brak ciała metody.");
-                return null;
+                continue;
             }
 
-            // Deklaracje zmiennych
             var variableDeclaratorSyntaxes = bodyNodes
                 .OfType<VariableDeclaratorSyntax>();
 
@@ -111,8 +104,6 @@ internal class Program
                         variableAssignments[name] = value;
                 }
             }
-
-            var expressionStatementSyntaxes = method.DescendantNodes().OfType<ExpressionStatementSyntax>().ToList();
 
             foreach (var assignment in method.DescendantNodes().OfType<ExpressionStatementSyntax>())
             {
@@ -140,10 +131,6 @@ internal class Program
                      member.Name.ToString().EndsWith("DeleteAsync")))
                 .ToList();
 
-            if (invocations.Count > 0)
-            {
-            }
-
             foreach (var invocation in invocations)
             {
                 var member = (MemberAccessExpressionSyntax)invocation.Expression;
@@ -156,18 +143,58 @@ internal class Program
                     if (variableAssignments.TryGetValue(identifier.Identifier.Text, out var assignedValue))
                     {
                         int count = assignedValue.Count(c => c == '"');
-
                         var valueMy = assignedValue.Replace("\"", string.Empty);
-
                         argumentStr = valueMy;
+                    }
+                }
+                else if (argument?.Expression is InvocationExpressionSyntax invocationExpr)
+                {
+                    if (invocationExpr.Expression is IdentifierNameSyntax id)
+                    {
+                        if (staticStringMethods.TryGetValue(id.Identifier.Text, out var staticValue))
+                        {
+                            argumentStr = staticValue;
+                        }
+                    }
+                    else if (invocationExpr.Expression is MemberAccessExpressionSyntax memberAccess)
+                    {
+                        var staticMethodName = memberAccess.Name.Identifier.Text;
+                        if (staticStringMethods.TryGetValue(staticMethodName, out var staticValue))
+                        {
+                            argumentStr = staticValue;
+                        }
                     }
                 }
 
                 string text = $"[{methodName.Replace("Async", "").ToUpper()}] {argumentStr} in {filePath}";
-
                 results.Add(text);
             }
         }
+
+        return results;
+    }
+
+    private static Dictionary<string, string> ExtractStaticStringReturningMethods(SyntaxNode root)
+    {
+        var results = new Dictionary<string, string>();
+
+        var methods = root.DescendantNodes()
+            .OfType<MethodDeclarationSyntax>()
+            .Where(m =>
+                m.ParameterList.Parameters.Count == 0 &&
+                m.Body != null &&
+                m.Modifiers.Any(SyntaxKind.StaticKeyword) &&
+                m.ReturnType.ToString() == "string");
+
+        foreach (var method in methods)
+        {
+            var returnStatement = method.DescendantNodes().OfType<ReturnStatementSyntax>().FirstOrDefault();
+            if (returnStatement?.Expression is LiteralExpressionSyntax literal && literal.IsKind(SyntaxKind.StringLiteralExpression))
+            {
+                results[method.Identifier.Text] = literal.Token.ValueText;
+            }
+        }
+
         return results;
     }
 }

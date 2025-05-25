@@ -117,6 +117,9 @@ namespace Code_Wars_2025.FilesToAnalysis
 
         private static string GetExampleUrl()
         {
+            var some = 1 + 4;
+            some++;
+
             return "https://xxx.com/api/tasks";
         }
     }
