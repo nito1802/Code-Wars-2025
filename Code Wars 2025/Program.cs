@@ -1,15 +1,22 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using System.Reflection;
 
 internal class Program
 {
-    private static bool ContainsRequest(string path)
+    private static async Task Main(string[] args)
     {
-        var content = File.ReadAllText(path);
+        string path = @"C:\Users\Jarek\Desktop\Istotne\source\Visual Studio\Test\Code Wars 2025\Code Wars 2025\FilesToAnalysis\ExampleFileToAnalyse.cs";
 
-        return content.Contains("GetAsync") || content.Contains("PostAsync");
+        var methodsNames = LookinToMethodsStart(path);
+        var syntaxNode = await GetSyntaxNodeMy(path);
+
+        var endpoints = await GetEndpointInvokationsFromFile(methodsNames, syntaxNode, path);
+
+        foreach (var item in endpoints)
+        {
+            Console.WriteLine(item);
+        }
     }
 
     private static List<string> LookinToMethodsStart(string filePath)
@@ -47,7 +54,6 @@ internal class Program
             {
                 var methodName = methodDecl.Identifier.Text;
                 results.Add(methodName);
-                Console.WriteLine($"Metoda: {methodName}, linia: {inv.GetLocation().GetLineSpan().StartLinePosition.Line + 1}");
             }
         }
 
@@ -62,7 +68,7 @@ internal class Program
         return root;
     }
 
-    private static async Task<List<string>> GetSyntaxNode(List<string> methodsWithRequests, SyntaxNode root, string filePath)
+    private static async Task<List<string>> GetEndpointInvokationsFromFile(List<string> methodsWithRequests, SyntaxNode root, string filePath)
     {
         List<string> results = new List<string>();
 
@@ -156,96 +162,12 @@ internal class Program
                         argumentStr = valueMy;
                     }
                 }
-                //else if (argument?.Expression is InvocationExpressionSyntax methodCall)
-                //{
-                //    var symbol = semanticModel.GetSymbolInfo(methodCall).Symbol as IMethodSymbol;
-                //    if (symbol != null && symbol.DeclaringSyntaxReferences.Length > 0)
-                //    {
-                //        var methodDecl = symbol.DeclaringSyntaxReferences[0].GetSyntax() as MethodDeclarationSyntax;
-                //        var returnStmt = methodDecl?.Body?.Statements.OfType<ReturnStatementSyntax>().FirstOrDefault();
-                //        if (returnStmt?.Expression != null)
-                //        {
-                //            argumentStr = returnStmt.Expression.ToString();
-                //        }
-                //    }
-                //}
 
-                //var directoryMy = Path.GetDirectoryName(filePath);
-                //string text = $"[{methodName.Replace("Async", "").ToUpper()}] {argumentStr} in {Path.GetFileName(filePath)}";
                 string text = $"[{methodName.Replace("Async", "").ToUpper()}] {argumentStr} in {filePath}";
 
                 results.Add(text);
-
-                if (!string.IsNullOrEmpty(text))
-                {
-                }
-                Console.WriteLine(text);
             }
         }
         return results;
-    }
-
-    private static async Task AlfaMy(string item)
-    {
-        var methodsMy = LookinToMethodsStart(item);
-
-        var syntaxNode = await GetSyntaxNodeMy(item);
-
-        //var myTt = await GetSyntaxNode(["CompleteTask3Async"], syntaxNode, item);
-        var myTt = await GetSyntaxNode(methodsMy, syntaxNode, item);
-    }
-
-    private static async Task Main(string[] args)
-    {
-        //var files = Directory.GetFiles("C:\\Users\\Jarek\\Desktop\\Istotne\\source\\Visual Studio\\Main\\SmartHome_BE", "*.cs", SearchOption.AllDirectories);
-
-        await AlfaMy(@"C:\Users\Jarek\Desktop\Istotne\source\Visual Studio\Test\Code Wars 2025\Code Wars 2025\FilesToAnalysis\ExampleFileToAnalyse.cs");
-
-        var myDir = @"C:\Users\Jarek\Desktop\Istotne\source\Visual Studio\Main";
-
-        var directories = Directory.GetDirectories(myDir);
-
-        List<List<string>> myFF = [];
-
-        foreach (var dir in directories)
-        {
-            var filesgg = Directory.GetFiles(dir, "*.cs", SearchOption.AllDirectories).Where(ContainsRequest).ToList();
-
-            foreach (var item in filesgg)
-            {
-                var methodsMy = LookinToMethodsStart(item);
-
-                var syntaxNode = await GetSyntaxNodeMy(item);
-
-                var myTt = await GetSyntaxNode(methodsMy, syntaxNode, item);
-                if (myTt?.Count > 0)
-                {
-                    myFF.Add(myTt);
-                }
-            }
-        }
-
-        var myText = "$\"https://polska.com/open/v1/project/fss\"\"?isAllDay=true&isCompleted=true\"\"ss\"";
-
-        string exText = "myExampleBranch";
-
-        var isCont = exText.Contains("branch");
-
-        List<string> files = [@"C:\Users\Jarek\Desktop\Istotne\source\Visual Studio\Test\Code Wars 2025\Code Wars 2025\FilesToAnalysis\ExampleFileToAnalyse.cs"];
-
-        var syntaxTrees = files.Select(file => CSharpSyntaxTree.ParseText(File.ReadAllText(file))).ToList();
-
-        var references = new List<MetadataReference>
-        {
-            MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
-            MetadataReference.CreateFromFile(typeof(Enumerable).Assembly.Location),
-            MetadataReference.CreateFromFile(Assembly.Load("System.Runtime").Location)
-        };
-
-        var compilation = CSharpCompilation.Create("Analysis", syntaxTrees, references);
-
-        //var code = File.ReadAllText(filePath);
-        //var tree = CSharpSyntaxTree.ParseText(code);
-        //var root = await tree.GetRootAsync();
     }
 }

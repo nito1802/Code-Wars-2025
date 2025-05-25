@@ -63,6 +63,24 @@ namespace Code_Wars_2025.FilesToAnalysis
             response.EnsureSuccessStatusCode();
         }
 
+        public static async Task CompleteTaskAsyncExMethod(string accessToken, string projectId, string taskId)
+        {
+            var httpClient = new HttpClient();
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            var myUrl = MyMapper.GetUrl();
+            var response = await httpClient.PostAsync(myUrl, null);
+            response.EnsureSuccessStatusCode();
+        }
+
+        public static async Task CompleteTaskAsyncExMethodOwn(string accessToken, string projectId, string taskId)
+        {
+            var httpClient = new HttpClient();
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            var myUrl = GetExampleUrl();
+            var response = await httpClient.PostAsync(myUrl, null);
+            response.EnsureSuccessStatusCode();
+        }
+
         public static async Task CompleteTask2Async(string accessToken, string projectId, string taskId)
         {
             var httpClient = new HttpClient();
@@ -95,6 +113,11 @@ namespace Code_Wars_2025.FilesToAnalysis
         {
             var offset = new DateTimeOffset(date);
             return offset.ToString("yyyy-MM-dd'T'HH:mm:ss") + offset.ToString("zzz").Replace(":", "");
+        }
+
+        private static string GetExampleUrl()
+        {
+            return "https://xxx.com/api/tasks";
         }
     }
 }
