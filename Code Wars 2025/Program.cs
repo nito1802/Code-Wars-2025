@@ -106,9 +106,9 @@ internal class Program
                 }
             }
 
-            var expressionStatementSyntaxes = root.DescendantNodes().OfType<ExpressionStatementSyntax>().ToList();
+            var expressionStatementSyntaxes = method.DescendantNodes().OfType<ExpressionStatementSyntax>().ToList();
 
-            foreach (var assignment in root.DescendantNodes().OfType<ExpressionStatementSyntax>())
+            foreach (var assignment in method.DescendantNodes().OfType<ExpressionStatementSyntax>())
             {
                 if (assignment.Expression is AssignmentExpressionSyntax assignExpr && assignExpr.IsKind(SyntaxKind.AddAssignmentExpression))
                 {
@@ -124,7 +124,7 @@ internal class Program
                 }
             }
 
-            var invocations = root.DescendantNodes()
+            var invocations = method.DescendantNodes()
                 .OfType<InvocationExpressionSyntax>()
                 .Where(inv =>
                     inv.Expression is MemberAccessExpressionSyntax member &&
@@ -185,9 +185,21 @@ internal class Program
         return results;
     }
 
+    private static async Task AlfaMy(string item)
+    {
+        var methodsMy = LookinToMethodsStart(item);
+
+        var syntaxNode = await GetSyntaxNodeMy(item);
+
+        //var myTt = await GetSyntaxNode(["CompleteTask3Async"], syntaxNode, item);
+        var myTt = await GetSyntaxNode(methodsMy, syntaxNode, item);
+    }
+
     private static async Task Main(string[] args)
     {
         //var files = Directory.GetFiles("C:\\Users\\Jarek\\Desktop\\Istotne\\source\\Visual Studio\\Main\\SmartHome_BE", "*.cs", SearchOption.AllDirectories);
+
+        await AlfaMy(@"C:\Users\Jarek\Desktop\Istotne\source\Visual Studio\Test\Code Wars 2025\Code Wars 2025\FilesToAnalysis\ExampleFileToAnalyse.cs");
 
         var myDir = @"C:\Users\Jarek\Desktop\Istotne\source\Visual Studio\Main";
 
