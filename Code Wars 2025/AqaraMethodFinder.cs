@@ -20,8 +20,32 @@ namespace Code_Wars_2025
 
             foreach (var field in fields)
             {
-                var name = string.Join(", ", field.Declaration.Variables.Select(v => v.Identifier.Text));
-                Console.WriteLine($"Znaleziono readonly pole IAqaraDevicesService: {name}");
+                var fieldNames = field.Declaration.Variables.Select(v => v.Identifier.Text).ToList();
+                var nameList = string.Join(", ", fieldNames);
+                Console.WriteLine($"Znaleziono readonly pole IAqaraDevicesService: {nameList}");
+
+                // Szukamy wywołań metod na tym polu
+                var invocations = root.DescendantNodes()
+                    .OfType<InvocationExpressionSyntax>()
+                    .Where(invocation =>
+                    {
+                        if (invocation.Expression is MemberAccessExpressionSyntax memberAccess &&
+                            memberAccess.Expression is IdentifierNameSyntax identifier)
+                        {
+                            return fieldNames.Contains(identifier.Identifier.Text);
+                        }
+                        return false;
+                    });
+
+                foreach (var invocation in invocations)
+                {
+                    var memberAccess = invocation.Expression as MemberAccessExpressionSyntax;
+                    var methodName = memberAccess?.Name.Identifier.Text;
+                    if (methodName != null)
+                        Console.WriteLine($"  → Wywołanie metody: {methodName}()");
+                }
+
+                Console.WriteLine(); // pusty wiersz dla czytelności
             }
         }
     }
