@@ -9,6 +9,18 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="FilesToAnalysis\CallbacksController.cs" />
+    <Compile Remove="FilesToAnalysis\ExampleFileToAnalyse.cs" />
+    <Compile Remove="FilesToAnalysis\LittleExampleFileToAnalyse.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="FilesToAnalysis\CallbacksController.cs" />
+    <Content Include="FilesToAnalysis\ExampleFileToAnalyse.cs" />
+    <Content Include="FilesToAnalysis\LittleExampleFileToAnalyse.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.13.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
