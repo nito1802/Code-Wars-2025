@@ -6,7 +6,7 @@ namespace Code_Wars_2025
 {
     public static class AqaraMethodFinder
     {
-        public static async Task FindAqaraServiceCalls(string code)
+        public static async Task FindAqaraServiceCalls(string code, string interfaceLookin)
         {
             var tree = CSharpSyntaxTree.ParseText(code);
             var root = tree.GetRoot();
@@ -16,7 +16,7 @@ namespace Code_Wars_2025
                 .Where(f =>
                     f.Modifiers.Any(m => m.IsKind(SyntaxKind.ReadOnlyKeyword)) &&
                     f.Declaration.Type is IdentifierNameSyntax type &&
-                    type.Identifier.Text == "IAqaraDevicesService");
+                    type.Identifier.Text == interfaceLookin);
 
             foreach (var field in fields)
             {

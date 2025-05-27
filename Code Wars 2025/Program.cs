@@ -29,13 +29,13 @@ public class EndpointCall
     public string FullPath { get; set; }
 }
 
-internal class Program
+internal class Programc
 {
     private static async Task Main(string[] args)
     {
         var aqaraServiceCalls = File.ReadAllText(@"C:\Users\Jarek\Desktop\Istotne\source\Visual Studio\Test\Code Wars 2025\Code Wars 2025\FilesToAnalysis\CallbacksController.cs");
 
-        await AqaraMethodFinder.FindAqaraServiceCalls(aqaraServiceCalls);
+        await AqaraMethodFinder.FindAqaraServiceCalls(aqaraServiceCalls, "IAqaraDevicesService");
 
         string path = @"C:\Users\Jarek\Desktop\Istotne\source\Visual Studio\Test\Code Wars 2025\Code Wars 2025\FilesToAnalysis\ExampleFileToAnalyse.cs";
 
