@@ -2,6 +2,7 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using System.Text.RegularExpressions;
 
 public class EndpointCall
 {
@@ -31,8 +32,26 @@ public class EndpointCall
 
 internal class Programc
 {
+    public static List<string> ExtractParameters(string url)
+    {
+        var matches = Regex.Matches(url, @"\{([^{}]+)\}");
+        var result = new List<string>();
+        foreach (Match match in matches)
+        {
+            result.Add(match.Groups[1].Value);
+        }
+        return result;
+    }
+
     private static async Task Main(string[] args)
     {
+        int alfa = 1;
+        string beta = "polsk";
+
+        var myString = "https://api.ticktick.com/open/v1/project/{alfa}/task/{beta}/completexx";
+
+        var elemets = ExtractParameters(myString);
+
         var aqaraServiceCalls = File.ReadAllText(@"C:\Users\Jarek\Desktop\Istotne\source\Visual Studio\Test\Code Wars 2025\Code Wars 2025\FilesToAnalysis\CallbacksController.cs");
 
         await AqaraMethodFinder.FindAqaraServiceCalls(aqaraServiceCalls, "IAqaraDevicesService");
