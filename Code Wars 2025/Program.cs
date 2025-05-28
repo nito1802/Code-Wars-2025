@@ -45,6 +45,12 @@ internal class Programc
 
     private static async Task Main(string[] args)
     {
+        var myPath = @"C:\Users\Jarek\Desktop\Istotne\source\Visual Studio\Main\MySmartHomeApp\MySmartHomeApp";
+
+        Directory.GetFiles(myPath, "*.cs", SearchOption.AllDirectories)
+            .ToList()
+            .ForEach(Console.WriteLine);
+
         int alfa = 1;
         string beta = "polsk";
 
